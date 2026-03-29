@@ -139,9 +139,33 @@ else:
             owner_obj.add_task(pet_lookup[selected_pet_name], task)
             st.success(f"Added task '{task.description}' for {selected_pet_name}.")
 
+scheduler_for_view = Scheduler()
 all_tasks = owner_obj.get_all_tasks()
+
+st.subheader("Current Tasks")
 if all_tasks:
-    st.write("Current tasks:")
+    filter_col1, filter_col2 = st.columns(2)
+    with filter_col1:
+        pet_filter_options = ["All pets"] + [pet.name for pet in owner_obj.pets]
+        selected_pet_filter = st.selectbox("Filter by pet", options=pet_filter_options)
+    with filter_col2:
+        status_filter = st.selectbox("Filter by status", options=["All", "Pending", "Completed"])
+
+    selected_pet_name = None if selected_pet_filter == "All pets" else selected_pet_filter
+    selected_status = None
+    if status_filter == "Pending":
+        selected_status = False
+    elif status_filter == "Completed":
+        selected_status = True
+
+    filtered_tasks = scheduler_for_view.filter_owner_tasks(
+        owner_obj,
+        pet_name=selected_pet_name,
+        is_completed=selected_status,
+    )
+    sorted_filtered_tasks = scheduler_for_view.sort_tasks_by_time(filtered_tasks)
+
+    st.success(f"Showing {len(sorted_filtered_tasks)} of {len(all_tasks)} tasks.")
     st.table(
         [
             {
@@ -153,11 +177,58 @@ if all_tasks:
                 "pets": ", ".join(p.name for p in task.participants),
                 "completed": task.is_completed,
             }
-            for task in all_tasks
+            for task in sorted_filtered_tasks
         ]
     )
 else:
     st.info("No tasks yet. Add one above.")
+
+st.subheader("Task Status")
+if all_tasks:
+    tasks_for_status = scheduler_for_view.sort_tasks_by_time(all_tasks)
+    task_display_lookup = {
+        (
+            f"{task.description} | {task.due_by.strftime('%Y-%m-%d %H:%M')} | "
+            f"Pets: {', '.join(p.name for p in task.participants) or 'Unassigned'}"
+        ): task
+        for task in tasks_for_status
+    }
+
+    selected_task_label = st.selectbox(
+        "Select task to update",
+        options=list(task_display_lookup.keys()),
+    )
+    selected_task = task_display_lookup[selected_task_label]
+
+    st.caption(
+        f"Current status: {'Completed' if selected_task.is_completed else 'Pending'}"
+    )
+
+    status_col1, status_col2 = st.columns(2)
+    with status_col1:
+        if st.button("Mark Selected Task Complete"):
+            next_task = scheduler_for_view.update_task_status(
+                selected_task,
+                True,
+                owner=owner_obj,
+            )
+            st.success("Task marked as complete.")
+            if next_task is not None:
+                st.success(
+                    "Recurring task detected. Created next instance due "
+                    f"{next_task.due_by.strftime('%Y-%m-%d %H:%M')}."
+                )
+
+    with status_col2:
+        if st.button("Mark Selected Task Incomplete"):
+            scheduler_for_view.update_task_status(
+                selected_task,
+                False,
+                owner=owner_obj,
+            )
+            st.success("Task marked as incomplete.")
+else:
+    st.info("Add tasks first to manage completion status.")
 
 st.divider()
 
@@ -180,6 +251,7 @@ if st.button("Generate schedule"):
     if not daily_plan:
         st.warning("No tasks fit the current schedule constraints.")
     else:
+        sorted_plan = scheduler.sort_tasks_by_time(daily_plan)
         st.success("Today's schedule generated.")
         st.table(
             [
@@ -190,6 +262,16 @@ if st.button("Generate schedule"):
                     "priority": task.priority,
                     "pets": ", ".join(p.name for p in task.participants),
                 }
-                for task in daily_plan
+                for task in sorted_plan
             ]
         )
+
+        overlap_conflicts = scheduler.detect_conflicts(sorted_plan)
+        same_time_warnings = scheduler.detect_same_time_conflict_warnings(sorted_plan)
+        if overlap_conflicts:
+            st.warning(
+                f"Detected {len(overlap_conflicts)} overlapping task conflict(s). "
+                "Consider adjusting due times or durations."
+            )
+        for warning_message in same_time_warnings:
+            st.warning(warning_message)

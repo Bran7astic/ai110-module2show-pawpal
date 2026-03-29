@@ -12,6 +12,11 @@ A busy pet owner needs help staying consistent with pet care. They want an assis
 
 Your job is to design the system first (UML), then implement the logic in Python, then connect it to the Streamlit UI.
 
+## Preview
+
+<a href="./preview1.png" target="_blank"><img src='./preview1.png' title='PawPal App' width='' alt='PawPal App' class='center-block' /></a>
+<a href="./preview2.png" target="_blank"><img src='./preview2.png' title='PawPal App' width='' alt='PawPal App' class='center-block' /></a>
+
 ## What you will build
 
 Your final app should:
@@ -43,6 +48,18 @@ The scheduler now includes several practical logic upgrades:
 - **Non-blocking warnings in CLI demo:** `main.py` now demonstrates same-time conflicts and prints user-friendly warnings while continuing to produce a schedule.
 
 These improvements keep the app simple while making planning behavior more realistic and pet-owner friendly.
+
+## Features
+
+- Due-time task sorting with tie-breakers (priority, duration, task ID)
+- Optional descending sort for reverse time order
+- Task filtering by pet name and completion status
+- Owner-level filtered task retrieval
+- Recurrence parsing for `daily`, `weekly`, `every N days`, and `every N weeks`
+- Automatic next-instance creation when daily/weekly tasks are marked complete
+- Overlap conflict detection based on start time and duration
+- Same-time conflict warning generation for same-pet and cross-pet task collisions
+- Non-blocking warning strategy that reports issues instead of crashing
 
 ## Testing PawPal+
 
