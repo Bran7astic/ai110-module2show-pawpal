@@ -31,6 +31,19 @@ python -m venv .venv
 source .venv/bin/activate  # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 ```
+## Smarter Scheduling
+
+The scheduler now includes several practical logic upgrades:
+
+- **Time-aware sorting:** Tasks can be sorted by due time (with tie-breakers for priority and duration) so daily plans are ordered in a predictable way.
+- **Task filtering:** Tasks can be filtered by pet name and/or completion status, including a convenience method to filter directly from an owner.
+- **Recurring-task parsing:** Recurrence strings such as `daily`, `weekly`, `every 2 days`, and `every 2 weeks` are interpreted into concrete time intervals.
+- **Auto-regeneration of recurring tasks:** When a **daily** or **weekly** task is marked complete, the completed task is preserved as history and a new task instance is automatically created for the next due occurrence.
+- **Lightweight conflict detection:** The scheduler detects overlapping tasks and same-start-time collisions, then returns warning messages instead of raising exceptions.
+- **Non-blocking warnings in CLI demo:** `main.py` now demonstrates same-time conflicts and prints user-friendly warnings while continuing to produce a schedule.
+
+These improvements keep the app simple while making planning behavior more realistic and pet-owner friendly.
+
 
 ### Suggested workflow
 

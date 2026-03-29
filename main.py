@@ -36,6 +36,15 @@ def build_sample_data() -> tuple[Owner, Scheduler]:
 		priority=5,
 	)
 
+	# Intentionally same time as feed_task to demonstrate conflict warning behavior.
+	medication_task = Task(
+		description="Give medication",
+		due_by=next_occurrence(18, 0),
+		frequency="daily",
+		duration_minutes=10,
+		priority=4,
+	)
+
 	groom_task = Task(
 		description="Brush fur",
 		due_by=next_occurrence(12, 30),
@@ -46,6 +55,7 @@ def build_sample_data() -> tuple[Owner, Scheduler]:
 
 	owner.add_task(pet_one, walk_task)
 	owner.add_task(pet_one, feed_task)
+	owner.add_task(pet_one, medication_task)
 	owner.add_task(pet_two, groom_task)
 
 	scheduler = Scheduler(available_minutes_per_day=90, prefer_earlier_due=True)
@@ -69,6 +79,13 @@ def print_schedule(owner: Owner, scheduler: Scheduler) -> None:
 			f"{index}. {task.description} | Due: {due_text} | "
 			f"Duration: {task.duration_minutes} min | Priority: {task.priority} | Pets: {pet_names}"
 		)
+
+	conflict_warnings = scheduler.detect_same_time_conflict_warnings(plan)
+	if conflict_warnings:
+		print("\nWarnings")
+		print("-" * 40)
+		for warning in conflict_warnings:
+			print(warning)
 
 
 if __name__ == "__main__":
