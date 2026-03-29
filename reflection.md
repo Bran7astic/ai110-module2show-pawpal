@@ -5,12 +5,15 @@
 **a. Initial design**
 
 - Briefly describe your initial UML design.
+    * My UML design contains the four intended classes, being Owner, Pet, Task, and Scheduler.
 - What classes did you include, and what responsibilities did you assign to each?
-
+    *  The owner, pet and task classes hold data and have sensible methods, and the schedule only has methods, as it doesn't function as a dataclass
 **b. Design changes**
 
 - Did your design change during implementation?
 - If yes, describe at least one change and why you made it.
+    * Yes, Copilot didn't include priority and duration on the tasks, which are important for organizing the tasks and scheduling
+    * Copilot also added some new fields for tasks, include an ID to make deleting and editing tasks less fragile, and 
 
 ---
 
