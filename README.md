@@ -44,6 +44,27 @@ The scheduler now includes several practical logic upgrades:
 
 These improvements keep the app simple while making planning behavior more realistic and pet-owner friendly.
 
+## Testing PawPal+
+
+Run the automated tests with:
+
+```bash
+python -m pytest
+```
+
+Current test coverage focuses on core scheduler reliability:
+
+- Task completion state updates
+- Adding tasks to pets/owners
+- Sorting correctness (earliest-first, descending order, tie-breakers)
+- Filtering by pet name and completion status
+- Recurrence behavior (daily/weekly next-instance creation and interval parsing)
+- Conflict detection (overlap detection and same-time warning generation)
+
+Confidence Level: ★★★★☆ (4/5)
+
+Rationale: recent test runs are passing and cover key planning logic paths, but confidence is not perfect yet because broader integration and edge-case stress testing can still be expanded.
+
 
 ### Suggested workflow
 

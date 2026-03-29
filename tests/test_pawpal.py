@@ -64,6 +64,52 @@ def test_sort_tasks_by_time_orders_earliest_first() -> None:
 	assert [task.description for task in sorted_tasks] == ["Earlier", "Later"]
 
 
+def test_sort_tasks_by_time_supports_descending_order() -> None:
+	scheduler = Scheduler()
+	base = datetime.now().replace(second=0, microsecond=0)
+
+	task_a = Task(
+		description="A",
+		due_by=base + timedelta(hours=1),
+		frequency="once",
+		duration_minutes=10,
+		priority=1,
+	)
+	task_b = Task(
+		description="B",
+		due_by=base + timedelta(hours=2),
+		frequency="once",
+		duration_minutes=10,
+		priority=1,
+	)
+
+	sorted_tasks = scheduler.sort_tasks_by_time([task_a, task_b], descending=True)
+	assert [task.description for task in sorted_tasks] == ["B", "A"]
+
+
+def test_sort_tasks_by_time_uses_priority_tiebreaker_when_due_times_match() -> None:
+	scheduler = Scheduler()
+	shared_due = datetime.now().replace(second=0, microsecond=0) + timedelta(hours=1)
+
+	high_priority = Task(
+		description="High priority",
+		due_by=shared_due,
+		frequency="once",
+		duration_minutes=20,
+		priority=5,
+	)
+	low_priority = Task(
+		description="Low priority",
+		due_by=shared_due,
+		frequency="once",
+		duration_minutes=20,
+		priority=1,
+	)
+
+	sorted_tasks = scheduler.sort_tasks_by_time([low_priority, high_priority])
+	assert [task.description for task in sorted_tasks] == ["High priority", "Low priority"]
+
+
 def test_filter_tasks_by_pet_and_status() -> None:
 	owner = Owner(name="Sam", age=28, location="Austin")
 	dog = Pet(name="Milo", type="Dog", breed="Mixed", age=4)
@@ -204,6 +250,26 @@ def test_update_task_status_does_not_create_new_instance_for_once_task() -> None
 	assert next_task is None
 
 
+def test_recurrence_interval_parses_every_n_days_and_weeks() -> None:
+	task_days = Task(
+		description="Hydration check",
+		due_by=datetime.now() + timedelta(hours=1),
+		frequency="every 2 days",
+		duration_minutes=5,
+		priority=2,
+	)
+	task_weeks = Task(
+		description="Deep clean",
+		due_by=datetime.now() + timedelta(hours=1),
+		frequency="every 3 weeks",
+		duration_minutes=30,
+		priority=2,
+	)
+
+	assert task_days.recurrence_interval() == timedelta(days=2)
+	assert task_weeks.recurrence_interval() == timedelta(weeks=3)
+
+
 def test_detect_conflicts_finds_overlapping_tasks() -> None:
 	base = datetime.now().replace(second=0, microsecond=0)
 
@@ -267,3 +333,33 @@ def test_detect_same_time_conflict_warnings_returns_warning_messages() -> None:
 	assert len(warnings) == 1
 	assert "Warning:" in warnings[0]
 	assert "simultaneous tasks" in warnings[0]
+
+
+def test_detect_same_time_conflict_warning_for_same_pet_mentions_conflict() -> None:
+	base = datetime.now().replace(second=0, microsecond=0)
+	shared_pet = Pet(name="Milo", type="Dog", breed="Mixed", age=3)
+
+	feed_task = Task(
+		description="Feed",
+		due_by=base,
+		frequency="daily",
+		duration_minutes=10,
+		priority=3,
+	)
+	med_task = Task(
+		description="Medication",
+		due_by=base,
+		frequency="daily",
+		duration_minutes=10,
+		priority=4,
+	)
+
+	feed_task.add_participant(shared_pet)
+	med_task.add_participant(shared_pet)
+
+	scheduler = Scheduler()
+	warnings = scheduler.detect_same_time_conflict_warnings([feed_task, med_task])
+
+	assert len(warnings) == 1
+	assert "conflict at" in warnings[0]
+	assert "Milo" in warnings[0]
